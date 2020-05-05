@@ -18,7 +18,7 @@ LOGGER = LOGGING.getLogger('ortholang_kernel')
 LOGGER.setLevel(LOGGING.DEBUG)
 LOGGER.addHandler(HANDLER)
 
-LOGGER.debug('reading ortholang_kernel script')
+# LOGGER.debug('reading ortholang_kernel script')
 
 class OrthoLangKernel(Kernel):
     implementation = 'OrthoLang'
@@ -47,16 +47,37 @@ class OrthoLangKernel(Kernel):
         self.spawn_repl()
         super(OrthoLangKernel, self).__init__(*args, **kwargs)
 
+    def cleanup_output(self, txt):
+        lines = txt.split('\n')
+
+        # remove the prompt
+        lines = lines[:-1]
+
+        # remove blank lines
+        while True:
+            if not len(lines[-1].strip()) == 0:
+                break
+            lines = lines[:-1] # TODO does this get discarded?
+
+        txt = '\n'.join(lines)
+        return txt
+
     # TODO write this
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
-        LOGGER.debug('OrthoLangKernel.do_execute')
+        LOGGER.debug('OrthoLangKernel.do_execute: "%s"' % code)
 
         self.ol_process.sendline(code + '\n')
 
         options = [OL_PROMPT, OL_BYENOW]
         self.ol_process.expect(options)
         index = self.ol_process.expect(options)
-        out = self.ol_process.before + self.ol_process.after # TODO wait, don't include prompt now right?
+
+        # TODO strip last newline thru prompt arrow
+        LOGGER.debug('before: "%s"' % self.ol_process.before)
+        LOGGER.debug('after: "%s"' % self.ol_process.after)
+        # out = self.ol_process.before + self.ol_process.after # TODO wait, don't include prompt now right?
+        out = self.cleanup_output(self.ol_process.before)
+        LOGGER.debug('out: "%s"' % out)
 
         if not silent:
             stream_content = {'name': 'stdout', 'text': out}
@@ -79,4 +100,4 @@ if __name__ == '__main__':
     from ipykernel.kernelapp import IPKernelApp
     IPKernelApp.launch_instance(kernel_class=OrthoLangKernel)
 
-LOGGER.debug('finished without syntax errors?')
+# LOGGER.debug('finished without syntax errors?')
