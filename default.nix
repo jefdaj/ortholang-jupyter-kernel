@@ -13,7 +13,8 @@ in pythonPackages.buildPythonPackage rec {
     pythonPackages."jupyter_client"
     pythonPackages."ipython"
     pythonPackages."ipykernel"
-    ortholang
+    pythonPackages."pexpect"
+    ortholang # TODO need to wrap the final binary to get this?
   ];
   doCheck = false; # TODO needs to set $HOME to run correctly?
 }

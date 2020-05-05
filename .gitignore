@@ -6,3 +6,4 @@ __pycache__/
 *.sw*
 *.egg-info
 result
+todo.txt
