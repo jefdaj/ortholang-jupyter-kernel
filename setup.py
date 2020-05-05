@@ -1,7 +1,8 @@
 from distutils.core import setup
 
-with open('README.rst') as f:
-    readme = f.read()
+# with open('README.rst') as f:
+    # readme = f.read()
+readme = "README HERE"
 
 setup(
     name='ortholang_kernel',
@@ -13,7 +14,7 @@ setup(
     author_email='jefdaj@berkeley.edu',
     url='https://github.com/jefdaj/ortholang_kernel',
     install_requires=[
-        'jupyter_client', 'IPython', 'ipykernel'
+        'jupyter_client', 'ipython', 'ipykernel'
     ],
     classifiers=[
         'Intended Audience :: Developers',
