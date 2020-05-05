@@ -1,0 +1,3 @@
+[submodule "ortholang"]
+	path = ortholang
+	url = http://github.com/jefdaj/ortholang

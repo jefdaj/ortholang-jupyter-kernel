@@ -6,6 +6,7 @@
 let
   # pkgs = import <nixpkgs> {};
   # myPython = import ./requirements.nix { inherit pkgs; };
+  ortholang = import ./ortholang;
 
 in pythonPackages.buildPythonPackage rec {
   name = "ortholang_kernel";
@@ -16,6 +17,7 @@ in pythonPackages.buildPythonPackage rec {
     pythonPackages."jupyter_client"
     pythonPackages."ipython"
     pythonPackages."ipykernel"
+    ortholang
   ];
   doCheck = false; # TODO needs to set $HOME to run correctly?
 }
