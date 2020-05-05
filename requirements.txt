@@ -1,3 +1,0 @@
-jupyter_client
-ipython
-ipykernel

@@ -2,9 +2,9 @@ from ipykernel.kernelbase import Kernel
 
 class OrthoLangKernel(Kernel):
     implementation = 'OrthoLang'
-    implementation_version = '1.0'
+    implementation_version = '0.1'
     language = 'ortholang'
-    language_version = '0.1'
+    language_version = '0.9.5'
     language_info = {
         'name': 'Any text',
         'mimetype': 'text/plain',
@@ -15,7 +15,7 @@ class OrthoLangKernel(Kernel):
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
                    allow_stdin=False):
         if not silent:
-            stream_content = {'name': 'stdout', 'text': code}
+            stream_content = {'name': 'stdout', 'text': 'ortholang says: "%s"' % code}
             self.send_response(self.iopub_socket, 'stream', stream_content)
 
         return {'status': 'ok',
