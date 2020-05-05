@@ -1,16 +1,16 @@
 from ipykernel.kernelbase import Kernel
 
-class EchoKernel(Kernel):
-    implementation = 'Echo'
+class OrthoLangKernel(Kernel):
+    implementation = 'OrthoLang'
     implementation_version = '1.0'
-    language = 'no-op'
+    language = 'ortholang'
     language_version = '0.1'
     language_info = {
         'name': 'Any text',
         'mimetype': 'text/plain',
         'file_extension': '.txt',
     }
-    banner = "Echo kernel - as useful as a parrot"
+    banner = "OrthoLang kernel - as useful as a parrot so far"
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None,
                    allow_stdin=False):

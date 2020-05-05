@@ -4,14 +4,14 @@ with open('README.rst') as f:
     readme = f.read()
 
 setup(
-    name='echo_kernel',
-    version='1.1',
-    packages=['echo_kernel'],
-    description='Simple example kernel for Jupyter',
+    name='ortholang_kernel',
+    version='0.1',
+    packages=['ortholang_kernel'],
+    description='OrthoLang kernel for Jupyter',
     long_description=readme,
-    author='Jupyter Development Team',
-    author_email='jupyter@googlegroups.com',
-    url='https://github.com/jupyter/echo_kernel',
+    author='Jeffrey David Johnson',
+    author_email='jefdaj@berkeley.edu',
+    url='https://github.com/jefdaj/ortholang_kernel',
     install_requires=[
         'jupyter_client', 'IPython', 'ipykernel'
     ],
