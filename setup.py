@@ -21,4 +21,7 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 3',
     ],
+    entry_points = {
+        'console_scripts': ['ortholang_kernel = ortholang_kernel.__main__:main']
+    }
 )

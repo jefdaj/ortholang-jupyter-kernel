@@ -7,7 +7,6 @@ import logging as LOGGING
 OL_WELCOME = u'' # TODO is this needed?
 OL_PROMPT  = u' —▶ '
 OL_BYENOW  = u'Bye for now!'
-OL_PACKAGE = '/nix/store/rmjnx4cy9zr3i3jvphmcg90k53k28g1l-OrthoLang-0.9.4' # TODO package properly
 OL_CFGFILE = '/home/jefdaj/ortholang_kernel/test1.cfg'
 OL_LOGFILE = '/tmp/ortholang_kernel.log' # TODO where should it go?
 
@@ -36,10 +35,9 @@ class OrthoLangKernel(Kernel):
     def spawn_repl(self):
         LOGGER.debug('OrthoLangKernel.spawn_repl')
         # TODO if supporting restart, this is where self.kill_repl would be called
-        olbin = OL_PACKAGE + '/bin/ortholang'
         args = ["--config", OL_CFGFILE, "--interactive"]
-        LOGGER.info('spawning %s %s' % (olbin, str(args)))
-        self.ol_process = spawn(olbin, args, encoding='utf-8', echo=False, timeout=None)
+        LOGGER.info('spawning ortholang %s' % str(args))
+        self.ol_process = spawn('ortholang', args, encoding='utf-8', echo=False, timeout=None)
         # TODO are we supposed to wait for/expect the welcome prompt here?
 
     def __init__(self, *args, **kwargs):
@@ -47,18 +45,19 @@ class OrthoLangKernel(Kernel):
         self.spawn_repl()
         super(OrthoLangKernel, self).__init__(*args, **kwargs)
 
-    def cleanup_output(self, txt):
-        lines = txt.split('\n')
-
+    def cleanup_lines(self, lines):
         # remove the prompt
         lines = lines[:-1]
-
-        # remove blank lines
+        # remove any blank lines
         while True:
             if not len(lines[-1].strip()) == 0:
                 break
-            lines = lines[:-1] # TODO does this get discarded?
+            lines = lines[:-1]
+        return lines
 
+    def cleanup_output(self, txt):
+        lines = txt.split('\n')
+        lines = self.cleanup_lines(lines)
         txt = '\n'.join(lines)
         return txt
 
