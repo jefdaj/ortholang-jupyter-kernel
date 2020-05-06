@@ -13,11 +13,15 @@ in pythonPackages.buildPythonApplication rec {
   name = "ortholang_kernel";
   version = "0.1";
   src = ./.;
-  propagatedBuildInputs = [
-    pythonPackages.jupyter_client
-    pythonPackages.ipython
-    pythonPackages.ipykernel
-    pythonPackages.pexpect
+  propagatedBuildInputs = with pythonPackages; [
+    jupyter_client
+    ipython
+    ipykernel
+    pexpect
+    matplotlib
+    pillow
+    imageio
+    numpy
   ];
   doCheck = false; # TODO needs to set $HOME to run correctly?
   postInstall = ''

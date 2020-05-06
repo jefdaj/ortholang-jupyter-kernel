@@ -1,16 +1,40 @@
 from ipykernel.kernelbase import Kernel
-from pexpect.replwrap import REPLWrapper # TODO try this
+# from pexpect.replwrap import REPLWrapper # TODO try this
 from pexpect import spawn, EOF
 
 import logging as LOGGING
 
-import re
-import base64
-from IPython.display import display, Image
 from os.path import realpath
+import re
+
+# import base64
+
+# TODO GIVE IT ONE OR TWO MORE TRIES IN THE MORNING, THEN ASK ON STACKOVERFLOW!
+from IPython.display import display, Image
+# from IPython import InteractiveShell as get_ipython
+
+# get_ipython().run_line_magic('matplotlib', 'inline')
+
+# get_ipython().magic('matplotlib inline')
+
 #from base64 import b64decode
 
-OL_WELCOME = u'' # TODO is this needed?
+# from PIL import Image
+# import numpy
+# import io
+
+#import ipykernel.pylab.backend_inline # import this first
+
+#from matplotlib import interactive
+#interactive(True)
+
+# import matplotlib.pyplot as plt
+# plt.ion()
+
+# from imageio import imread
+# from matplotlib.image import imread
+
+OL_WELCOME = u'Welcome to the OrthoLang interpreter!'
 OL_PROMPT  = u' —▶ '
 OL_BYENOW  = u'Bye for now!'
 OL_CFGFILE = '/home/jefdaj/ortholang_kernel/test1.cfg'
@@ -23,10 +47,24 @@ LOGGER = LOGGING.getLogger('ortholang_kernel')
 LOGGER.setLevel(LOGGING.DEBUG)
 LOGGER.addHandler(HANDLER)
 
+#LOGGER.debug('importing matplotlib.pyplot')
+#from matplotlib import pyplot
+#LOGGER.debug('calling pyplot.ion')
+#pyplot.ion()
+#LOGGER.debug('ok, pyplot.ion should be active')
+
+
 # LOGGER.debug('reading ortholang_kernel script')
 
 def contains_plot(txt):
     return 'plot image "' in txt
+
+# from https://stackoverflow.com/a/7769424/429898
+# def load_image( infilename ) :
+#     img = Image.open( infilename )
+#     img.load()
+#     data = numpy.asarray( img, dtype="int32" )
+#     return data
 
 class OrthoLangKernel(Kernel):
     implementation = 'OrthoLang'
@@ -43,11 +81,13 @@ class OrthoLangKernel(Kernel):
     # TODO should the class support restarts, or is that handled by making a new object?
     def spawn_repl(self):
         LOGGER.debug('OrthoLangKernel.spawn_repl')
-        # TODO if supporting restart, this is where self.kill_repl would be called
         args = ["--config", OL_CFGFILE, "--interactive"]
         LOGGER.info('spawning ortholang %s' % str(args))
         self.ol_process = spawn('ortholang', args, encoding='utf-8', echo=False, timeout=None)
-        # TODO are we supposed to wait for/expect the welcome prompt here?
+        self.ol_process.expect(OL_WELCOME)
+        LOGGER.debug("before: '%s'" % self.ol_process.before)
+        LOGGER.debug("after: '%s'" % self.ol_process.after)
+        LOGGER.info('REPL should be ready for input')
 
     def __init__(self, *args, **kwargs):
         LOGGER.debug('OrthoLangKernel.__init__')
@@ -82,16 +122,41 @@ class OrthoLangKernel(Kernel):
         LOGGER.debug('image paths: %s' % str(paths))
         plots = []
         for path in paths:
-            # TODO make sure path is inside WORKDIR or TMPDIR for security!
-            # with open(path, 'rb') as f:
-            # plot = base64.b64encode(f.read())
-            # plot = display.Image(f.read())
-            # TODO include paths on binary files so ipython can guess based on them (and probably other programs, and humans)
             path = realpath(path)
+
+            # this fails for some reason
+            # plot = display(Image(filename=path, format='png')) # TODO svg would be nicer right?
+
+            # so try sending it through matlab as suggested here:
+            # https://stackoverflow.com/a/55562243/429898
+            # with open(path, 'rb') as f:
+
             LOGGER.debug("loading '%s'..." % path)
-            plot = display(Image(filename=path, format='png')) # TODO svg would be nicer right?
+            LOGGER.debug("reading into an Image")
+            plot = Image(filename=path, format='png', embed=True, retina=True)
+            LOGGER.debug("ok. Image object %s" % str(plot))
+
+            # TODO does this use matplotlib still? might have to pick one that does
+            # LOGGER.debug("displaying it...")
+            # plot = display(plot)
+            # LOGGER.debug("ok. display object: %s" % str(plot))
+
+            # plot = Image.open(io.BytesIO(path))
+            # plot = Image.open(path)
+            # plot.load()
+            # LOGGER.debug("converting Image to numpy array")
+            # plot = numpy.array(image)
+            # LOGGER.debug("converting numpy array to plt")
+            # plot = plt.imshow(plot)
+            # LOGGER.debug("done!")
+
+            # plot = imread(path)
+
+            # LOGGER.debug("trying to send the Image directly")
+
             plots.append(plot)
             LOGGER.debug('ok')
+
         return plots
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
@@ -119,12 +184,13 @@ class OrthoLangKernel(Kernel):
                     content = {
                         # 'source': 'kernel',
                         'data': {'image/png': plot},
-                        'metadata' : {
-                            'image/png' : {'width': 2100,'height': 2100} # TODO set intelligently?
-                        }
+                        # 'metadata' : {
+                        #     'image/png' : {'width': 2100,'height': 2100} # TODO set intelligently?
+                        # }
                     }
                     LOGGER.debug('sending plot...')
                     self.send_response(self.iopub_socket, 'display_data', content)
+                    # display(plot)
                     LOGGER.debug('ok')
             else:
                 content = {'name': 'stdout', 'text': txt}
@@ -137,10 +203,25 @@ class OrthoLangKernel(Kernel):
                 'user_expressions': {},
                }
 
-    # TODO def do_is_complete
-    # TODO def do_shutdown
+    def quit_repl(self):
+        try:
+            LOGGER.info('quitting repl...')
+            self.ol_process.sendline(':quit\n')
+            self.ol_process.expect(OL_BYENOW, timeout=5)
+            LOGGER.debug('final output: "%s"' % (self.ol_process.before + self.ol_process.after))
+            self.ol_process.kill(0)
+            self.ol_process.close(force=True)
+            LOGGER.debug('quit successfully')
+        except:
+            LOGGER.error('failed to kill REPL')
 
+    # TODO def do_is_complete? maybe always true
 
+    def do_shutdown(self, restart):
+        self.quit_repl()
+        if restart:
+            LOGGER.info('restarting...')
+            self.spawn_repl()
 
 if __name__ == '__main__':
     LOGGER.debug('__main__')
