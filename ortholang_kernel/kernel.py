@@ -1,5 +1,4 @@
 from ipykernel.kernelbase import Kernel
-# from pexpect.replwrap import REPLWrapper # TODO try this
 from pexpect import spawn, EOF
 
 import logging as LOGGING
@@ -7,38 +6,17 @@ import logging as LOGGING
 from os.path import realpath
 import re
 
-# import base64
+import base64
+import urllib
 
-# TODO GIVE IT ONE OR TWO MORE TRIES IN THE MORNING, THEN ASK ON STACKOVERFLOW!
 from IPython.display import display, Image
-# from IPython import InteractiveShell as get_ipython
-
-# get_ipython().run_line_magic('matplotlib', 'inline')
-
-# get_ipython().magic('matplotlib inline')
-
-#from base64 import b64decode
-
-# from PIL import Image
-# import numpy
-# import io
-
-#import ipykernel.pylab.backend_inline # import this first
-
-#from matplotlib import interactive
-#interactive(True)
-
-# import matplotlib.pyplot as plt
-# plt.ion()
-
-# from imageio import imread
-# from matplotlib.image import imread
 
 OL_WELCOME = u'Welcome to the OrthoLang interpreter!'
 OL_PROMPT  = u' —▶ '
 OL_BYENOW  = u'Bye for now!'
 OL_CFGFILE = '/home/jefdaj/ortholang_kernel/test1.cfg'
-OL_LOGFILE = '/tmp/ortholang_kernel.log' # TODO where should it go?
+OL_LOGFILE = '/tmp/ortholang_kernel.log' # TODO add it to the main syslog
+ENCODING = 'utf-8'
 
 HANDLER = LOGGING.FileHandler(OL_LOGFILE)
 HANDLER.setFormatter(LOGGING.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
@@ -47,24 +25,8 @@ LOGGER = LOGGING.getLogger('ortholang_kernel')
 LOGGER.setLevel(LOGGING.DEBUG)
 LOGGER.addHandler(HANDLER)
 
-#LOGGER.debug('importing matplotlib.pyplot')
-#from matplotlib import pyplot
-#LOGGER.debug('calling pyplot.ion')
-#pyplot.ion()
-#LOGGER.debug('ok, pyplot.ion should be active')
-
-
-# LOGGER.debug('reading ortholang_kernel script')
-
 def contains_plot(txt):
     return 'plot image "' in txt
-
-# from https://stackoverflow.com/a/7769424/429898
-# def load_image( infilename ) :
-#     img = Image.open( infilename )
-#     img.load()
-#     data = numpy.asarray( img, dtype="int32" )
-#     return data
 
 class OrthoLangKernel(Kernel):
     implementation = 'OrthoLang'
@@ -76,14 +38,13 @@ class OrthoLangKernel(Kernel):
         'mimetype': 'text/x-script.ortholang',
         'file_extension': '.ol',
     }
-    banner = "OrthoLang"
+    banner = "OrthoLang 0.9.5"
 
-    # TODO should the class support restarts, or is that handled by making a new object?
     def spawn_repl(self):
         LOGGER.debug('OrthoLangKernel.spawn_repl')
         args = ["--config", OL_CFGFILE, "--interactive"]
         LOGGER.info('spawning ortholang %s' % str(args))
-        self.ol_process = spawn('ortholang', args, encoding='utf-8', echo=False, timeout=None)
+        self.ol_process = spawn('ortholang', args, encoding=ENCODING, echo=False, timeout=None)
         self.ol_process.expect(OL_WELCOME)
         LOGGER.debug("before: '%s'" % self.ol_process.before)
         LOGGER.debug("after: '%s'" % self.ol_process.after)
@@ -108,55 +69,18 @@ class OrthoLangKernel(Kernel):
         lines = txt.split('\n')
         lines = self.cleanup_lines(lines)
         txt = '\n'.join(lines)
-        # if "plot image '" in txt:
-            # stream_content = {'name': }
-        # else:
-        # stream_content = {'name': 'stdout', 'text': txt}
         return txt
 
     def load_plots(self, txt):
-        # TODO return a list of plots when needed (just trying one first)
-        # lines = [l.strip() for l in txt.split('\n')]
         regex = u'\[?plot image "(.*?)"'
         paths = re.findall(regex, txt)
         LOGGER.debug('image paths: %s' % str(paths))
         plots = []
         for path in paths:
             path = realpath(path)
-
-            # this fails for some reason
-            # plot = display(Image(filename=path, format='png')) # TODO svg would be nicer right?
-
-            # so try sending it through matlab as suggested here:
-            # https://stackoverflow.com/a/55562243/429898
-            # with open(path, 'rb') as f:
-
-            LOGGER.debug("loading '%s'..." % path)
-            LOGGER.debug("reading into an Image")
-            plot = Image(filename=path, format='png', embed=True, retina=True)
-            LOGGER.debug("ok. Image object %s" % str(plot))
-
-            # TODO does this use matplotlib still? might have to pick one that does
-            # LOGGER.debug("displaying it...")
-            # plot = display(plot)
-            # LOGGER.debug("ok. display object: %s" % str(plot))
-
-            # plot = Image.open(io.BytesIO(path))
-            # plot = Image.open(path)
-            # plot.load()
-            # LOGGER.debug("converting Image to numpy array")
-            # plot = numpy.array(image)
-            # LOGGER.debug("converting numpy array to plt")
-            # plot = plt.imshow(plot)
-            # LOGGER.debug("done!")
-
-            # plot = imread(path)
-
-            # LOGGER.debug("trying to send the Image directly")
-
-            plots.append(plot)
-            LOGGER.debug('ok')
-
+            LOGGER.debug('loading image from "%s"' % path)
+            utf8_b64 = base64.b64encode(open(path, "rb").read()).decode(ENCODING)
+            plots.append(utf8_b64)
         return plots
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
@@ -168,29 +92,22 @@ class OrthoLangKernel(Kernel):
         self.ol_process.expect(options)
         index = self.ol_process.expect(options)
 
-        # TODO strip last newline thru prompt arrow
-        LOGGER.debug("before: '%s'" % self.ol_process.before)
-        LOGGER.debug("after: '%s'" % self.ol_process.after)
-        # out = self.ol_process.before + self.ol_process.after # TODO wait, don't include prompt now right?
-        # out = self.cleanup_output(self.ol_process.before)
-        # LOGGER.debug('out: "%s"' % out)
-
         if not silent:
-            # stream_content = {'name': 'stdout', 'text': out}
             txt = self.prepare_content(self.ol_process.before)
             if contains_plot(txt):
                 plots = self.load_plots(txt) # TODO return the others
                 for plot in plots:
                     content = {
-                        # 'source': 'kernel',
+                        # note: 'data' key renamed to 'text' in messaging protocol 5.0
+                        # TODO which jupyter version is that?
                         'data': {'image/png': plot},
-                        # 'metadata' : {
-                        #     'image/png' : {'width': 2100,'height': 2100} # TODO set intelligently?
-                        # }
+                        'metadata' : {
+                            'image/png' : {'width': 600,'height': 400} # TODO set intelligently?
+                        }
                     }
-                    LOGGER.debug('sending plot...')
+                    LOGGER.debug('content: %s' % str(content))
+                    LOGGER.debug('sending content...')
                     self.send_response(self.iopub_socket, 'display_data', content)
-                    # display(plot)
                     LOGGER.debug('ok')
             else:
                 content = {'name': 'stdout', 'text': txt}
