@@ -11,11 +11,11 @@ import urllib
 
 from IPython.display import display, Image
 
-OL_ARROW  = u'—▶'
-OL_BYENOW  = u'Bye for now!'
-OL_CFGFILE = '/home/jefdaj/ortholang_kernel/test1.cfg'
-OL_LOGFILE = '/tmp/ortholang_kernel.log'
-ENCODING = 'utf-8'
+OL_ENCODING = 'utf-8'
+OL_ARROW    = u' —▶ ' #.encode(OL_ENCODING)
+OL_BYENOW   = u'Bye for now!' #.encode(OL_ENCODING)
+OL_CFGFILE  = '/home/jefdaj/ortholang_kernel/test1.cfg'
+OL_LOGFILE  = '/tmp/ortholang_kernel.log'
 
 HANDLER = LOGGING.FileHandler(OL_LOGFILE)
 HANDLER.setFormatter(LOGGING.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
@@ -26,12 +26,12 @@ LOGGER.addHandler(HANDLER)
 
 LOGGER.debug('reading ortholang_kernel.py...')
 
-def count_statements(txt):
-    # an attempt to guess how many statements are contained in a cell,
-    # so we know how many prompts to expect
-    nassigns  = len(re.findall('(^|\n)[a-zA-Z0-9]{1,}\s*=', txt, flags=re.DOTALL))
-    ncommands = len(re.findall('(^|\n)[a-z]{1,}:'         , txt, flags=re.DOTALL))
-    return max(1, nassigns + ncommands)
+# def count_statements(txt):
+#     # an attempt to guess how many statements are contained in a cell,
+#     # so we know how many prompts to expect
+#     nassigns  = len(re.findall('(^|\n)[a-zA-Z0-9]{1,}\s*=', txt, flags=re.DOTALL))
+#     ncommands = len(re.findall('(^|\n)[a-z]{1,}:'         , txt, flags=re.DOTALL))
+#     return max(1, nassigns + ncommands)
 
 # from https://www.tutorialspoint.com/How-can-I-remove-the-ANSI-escape-sequences-from-a-string-in-python
 def remove_ansi_escapes(txt):
@@ -70,9 +70,11 @@ class OrthoLangKernel(Kernel):
 
     def spawn_repl(self):
         LOGGER.debug('OrthoLangKernel.spawn_repl')
-        args = ["--config", OL_CFGFILE, "--interactive"]
-        LOGGER.info('spawning ortholang %s' % str(args))
-        self.ol_process = spawn('ortholang', args, encoding=ENCODING, echo=False, timeout=None)
+        args = ['--config', OL_CFGFILE, '--interactive']
+        # args = ["--interactive"]
+        # args = []
+        LOGGER.info('spawning ortholang %s' % args)
+        self.ol_process = spawn('ortholang', args, encoding=OL_ENCODING, echo=False, timeout=10)
         self.ol_process.expect_exact(OL_ARROW)
         LOGGER.debug("before: '%s'" % self.ol_process.before)
         LOGGER.debug("after: '%s'" % self.ol_process.after)
@@ -86,12 +88,12 @@ class OrthoLangKernel(Kernel):
     def load_plots(self, txt):
         regex = u'\[?plot image "(.*?)"'
         paths = re.findall(regex, txt)
-        LOGGER.debug('image paths: %s' % str(paths))
+        LOGGER.debug('image paths: %s' % paths)
         plots = []
         for path in paths:
             path = realpath(path)
             LOGGER.debug('loading image from "%s"' % path)
-            utf8_b64 = base64.b64encode(open(path, "rb").read()).decode(ENCODING)
+            utf8_b64 = base64.b64encode(open(path, "rb").read()).decode(OL_ENCODING)
             plots.append(utf8_b64)
         return plots
 
@@ -145,7 +147,7 @@ class OrthoLangKernel(Kernel):
                             'image/png' : {'width': 600,'height': 400} # TODO set intelligently?
                         }
                     }
-                    LOGGER.debug('content: %s' % str(content))
+                    LOGGER.debug('content: %s' % content)
                     LOGGER.debug('sending content...')
                     self.send_response(self.iopub_socket, 'display_data', content)
                     LOGGER.debug('ok')
