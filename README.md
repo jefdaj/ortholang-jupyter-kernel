@@ -2,7 +2,7 @@ ortholang_kernel
 ================
 
 A [Jupyter Lab][jupyterlab] kernel for [OrthoLang][ortholang].
-Still a work in progress, but ready for a few intrepid biologists to test!
+Still a work in progress, but ready for testing by a few intrepid biologists!
 
 
 Initial setup
@@ -14,9 +14,9 @@ It could be installed using the regular Jupyter kernel method:
 python -m ortholang_kernel.install
 ```
 
-... But since OrthoLang requires [Nix][nix], we might as well do it the Nix way
-instead! [NixOS][nixos] already has a Jupyter server module. Just add something
-like this to your `/etc/nixos/configuration.nix`:
+... But since OrthoLang already requires [Nix][nix], we might as well do it the
+reproducible Nix way instead! [NixOS][nixos] has a Jupyter server module. Just
+add something like this to your `/etc/nixos/configuration.nix`:
 
 ```
 services.jupyter = {
@@ -64,8 +64,9 @@ nixos-rebuild test` to start it. Go to `localhost:8888` in your browser, or see
 Complete webserver
 ------------------
 
-Once you have the server running, you'll probably want other people to be able to get to it too!
-Assuming you already have a domain name, adding something like this to the config should do it:
+Once you have the server running, you'll probably want other people to be able
+to access it! Assuming you already have a domain name, adding something like
+this to the config should set it up properly for the public internet:
 
 ```
 services.nginx = {
@@ -101,6 +102,7 @@ security.acme = {
 
 The `virtualHosts` section is useful if you want to tack this server on to an existing site.
 In that case you might also want `useACMEHost` to re-use an existing SSL certificate instead.
+
 
 [nixos]: https://nixos.org
 [nix]: https://nixos.org/nix
