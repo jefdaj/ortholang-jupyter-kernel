@@ -14,7 +14,10 @@
 pythonPackages.buildPythonApplication rec {
   name = "ortholang_kernel";
   version = "0.1";
-  src = ./.;
+
+  # prevents copying the src dir into the nix store on every shell invocation
+  src = if pkgs.lib.inNixShell then null else ./.;
+
   propagatedBuildInputs = with pythonPackages; [
     jupyter_client
     ipython
@@ -25,6 +28,9 @@ pythonPackages.buildPythonApplication rec {
     imageio
     numpy
   ];
+
+  # adds ortholang to PATH in the wrapper script
   makeWrapperArgs = ["--prefix PATH : ${ortholang}/bin"];
+
   doCheck = false;
 }

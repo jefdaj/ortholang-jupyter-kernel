@@ -12,8 +12,8 @@ import urllib
 from IPython.display import display, Image
 
 OL_ENCODING = 'utf-8'
-OL_ARROW    = u' —▶ ' #.encode(OL_ENCODING)
-OL_BYENOW   = u'Bye for now!' #.encode(OL_ENCODING)
+OL_ARROW    = u' —▶ '
+OL_BYENOW   = u'Bye for now!'
 OL_CFGFILE  = '/home/jefdaj/ortholang_kernel/test1.cfg'
 OL_LOGFILE  = '/tmp/ortholang_kernel.log'
 
@@ -71,8 +71,6 @@ class OrthoLangKernel(Kernel):
     def spawn_repl(self):
         LOGGER.debug('OrthoLangKernel.spawn_repl')
         args = ['--config', OL_CFGFILE, '--interactive']
-        # args = ["--interactive"]
-        # args = []
         LOGGER.info('spawning ortholang %s' % args)
         self.ol_process = spawn('ortholang', args, encoding=OL_ENCODING, echo=False, timeout=10)
         self.ol_process.expect_exact(OL_ARROW)
