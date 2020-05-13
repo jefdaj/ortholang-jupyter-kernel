@@ -2,14 +2,12 @@
 # that what we really want is a wrapped binary? Maybe that's just more
 # convenient to set up without Nix via modules.
 
-{ pkgs ? import <nixpkgs> {}
+{ pkgs           ? (import <nixpkgs> {})
+, ortholang      ? (pkgs.callPackage ./ortholang { inherit pkgs; })
 , pythonPackages ? pkgs.python37Packages
 }:
 
-let
-  ortholang = import ./ortholang;
-
-in pythonPackages.buildPythonApplication rec {
+pythonPackages.buildPythonApplication rec {
   name = "ortholang_kernel";
   version = "0.1";
   src = ./.;
@@ -24,6 +22,7 @@ in pythonPackages.buildPythonApplication rec {
     numpy
   ];
   doCheck = false; # TODO needs to set $HOME to run correctly?
+  inherit ortholang;
   postInstall = ''
     for f in $out/bin/*; do
       wrapProgram $f --prefix PATH : "${ortholang}/bin"

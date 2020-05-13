@@ -14,17 +14,24 @@ from IPython.display import display, Image
 OL_ARROW  = u'—▶'
 OL_BYENOW  = u'Bye for now!'
 OL_CFGFILE = '/home/jefdaj/ortholang_kernel/test1.cfg'
-OL_LOGFILE = '/tmp/ortholang_kernel.log' # TODO add it to the main syslog
+OL_LOGFILE = '/tmp/ortholang_kernel.log'
 ENCODING = 'utf-8'
 
 HANDLER = LOGGING.FileHandler(OL_LOGFILE)
 HANDLER.setFormatter(LOGGING.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
 
 LOGGER = LOGGING.getLogger('ortholang_kernel')
-LOGGER.setLevel(LOGGING.DEBUG) # TODO turn down
+LOGGER.setLevel(LOGGING.DEBUG)
 LOGGER.addHandler(HANDLER)
 
 LOGGER.debug('reading ortholang_kernel.py...')
+
+def count_statements(txt):
+    # an attempt to guess how many statements are contained in a cell,
+    # so we know how many prompts to expect
+    nassigns  = len(re.findall('(^|\n)[a-zA-Z0-9]{1,}\s*=', txt, flags=re.DOTALL))
+    ncommands = len(re.findall('(^|\n)[a-z]{1,}:'         , txt, flags=re.DOTALL))
+    return max(1, nassigns + ncommands)
 
 # from https://www.tutorialspoint.com/How-can-I-remove-the-ANSI-escape-sequences-from-a-string-in-python
 def remove_ansi_escapes(txt):
@@ -57,7 +64,7 @@ class OrthoLangKernel(Kernel):
         'name': 'OrthoLang',
         'mimetype': 'text/x-script.ortholang',
         'file_extension': '.ol',
-        'pygments_lexer': 'ipython' # seems close enough for highlighting purposes
+        'pygments_lexer': 'ipython3'
     }
     banner = "OrthoLang 0.9.5"
 
@@ -90,7 +97,7 @@ class OrthoLangKernel(Kernel):
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
-        # There's one extra rule (TODO is it really extra?) for parsing in the
+        # There's one extra rule for parsing in the
         # notebook interface: when a cell contains multiple statements, they
         # must be separated by blank lines.  For example the blank lines here
         # are important:
@@ -159,6 +166,7 @@ class OrthoLangKernel(Kernel):
         code = code.strip()
         LOGGER.debug("do_execute_statement '%s'" % code)
         self.ol_process.sendline(code)
+        # TODO yeah, make that equivalent to restarting
         options = [OL_ARROW, OL_BYENOW] # TODO what do we do if the user :quits? restart?
         self.ol_process.expect_exact(options)
         output = clean_lines(self.ol_process.before + self.ol_process.after)
