@@ -1,7 +1,7 @@
 from ipykernel.kernelbase import Kernel
 from pexpect import spawn, EOF
 
-import logging as LOGGING
+import logging
 
 from os import getcwd, makedirs
 from os.path import join, realpath, basename
@@ -18,19 +18,10 @@ OL_ENCODING = 'utf-8'
 OL_ARROW    = u' —▶ '
 OL_BYENOW   = u'Bye for now!'
 
-# TODO add this to the main syslog instead
-OL_LOGFILE = '/tmp/ortholang_kernel.log'
-HANDLER = LOGGING.FileHandler(OL_LOGFILE)
-HANDLER.setFormatter(LOGGING.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
-LOGGER = LOGGING.getLogger('ortholang_kernel')
-LOGGER.setLevel(LOGGING.DEBUG)
-LOGGER.addHandler(HANDLER)
-
-LOGGER.debug('reading ortholang_kernel.py...')
-
 def get_kernel_id():
     # This must be run from inside a kernel.
     # Based on: https://stackoverflow.com/a/13055551/429898
+    # TODO is the id persistent across sessions with the same notebook?
     connection_file_path = kernel.get_connection_file()
     connection_file = basename(connection_file_path)
     kernel_id = connection_file.split('-', 1)[1].split('.')[0]
@@ -56,10 +47,8 @@ def collapse_newlines(txt):
     return re.sub('(\r|\n){2,}', '\n', txt)
 
 def clean_lines(txt):
-    LOGGER.debug('clean_lines txt: "%s"' % txt)
     txt = remove_ansi_escapes(txt)
     txt = remove_prompt(txt)
-    LOGGER.debug('clean_lines result: "%s"' % txt)
     return txt
 
 def contains_plot(txt):
@@ -90,37 +79,47 @@ showtypes   = false
 autosave    = false
 showhidden  = false
 '''.format(**self.__dict__)
-        with open(self.cfgpath, 'w') as f:
+        with open(self.cfgfile, 'w') as f:
             f.write(cfgtext)
 
-    def spawn_repl(self):
-        LOGGER.debug('OrthoLangKernel.spawn_repl')
-        args = ['--config', self.cfgpath, '--interactive']
-        LOGGER.info('spawning ortholang %s' % args)
+    # TODO add this to the main syslog instead?
+    def init_logger(self):
+        self.logger = logging.getLogger('ortholang-kernel')
+        self.logger.setLevel(logging.DEBUG)
+        handler = logging.FileHandler(self.logfile)
+        handler.setFormatter(logging.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
+        self.logger.addHandler(handler)
+
+    def init_repl(self):
+        self.logger.debug('OrthoLangKernel.init_repl')
+        args = ['--config', self.cfgfile, '--interactive']
+        self.logger.info('spawning ortholang %s' % args)
         self.ol_process = spawn('ortholang', args, encoding=OL_ENCODING, echo=False, timeout=10)
         self.ol_process.expect_exact(OL_ARROW)
-        LOGGER.debug("before: '%s'" % self.ol_process.before)
-        LOGGER.debug("after: '%s'" % self.ol_process.after)
-        LOGGER.info('REPL should be ready for input')
+        self.logger.debug("before: '%s'" % self.ol_process.before)
+        self.logger.debug("after: '%s'" % self.ol_process.after)
+        self.logger.info('REPL should be ready for input')
 
     def __init__(self, *args, **kwargs):
-        LOGGER.debug('OrthoLangKernel.__init__')
+        self.kernel_id = get_kernel_id()
         self.workdir = getcwd()
-        self.tmpdir = join(self.workdir, '.ortholang-kernels', str(get_kernel_id()))
-        self.cfgpath = join(self.tmpdir, 'ortholang.cfg')
+        self.tmpdir  = join(self.workdir, '.ortholang-kernels', self.kernel_id)
+        self.cfgfile = join(self.tmpdir, 'ortholang.cfg')
+        self.logfile = join(self.tmpdir, 'kernel.log')
         makedirs(self.tmpdir, exist_ok=True)
+        self.init_logger()
         self.write_config()
-        self.spawn_repl()
+        self.init_repl()
         super(OrthoLangKernel, self).__init__(*args, **kwargs)
 
     def load_plots(self, txt):
         regex = u'\[?plot image "(.*?)"'
         paths = re.findall(regex, txt)
-        LOGGER.debug('image paths: %s' % paths)
+        self.logger.debug('image paths: %s' % paths)
         plots = []
         for path in paths:
             path = realpath(path)
-            LOGGER.debug('loading image from "%s"' % path)
+            self.logger.debug('loading image from "%s"' % path)
             utf8_b64 = base64.b64encode(open(path, "rb").read()).decode(OL_ENCODING)
             plots.append(utf8_b64)
         return plots
@@ -142,7 +141,7 @@ showhidden  = false
         # Otherwise we have no obvious way to know how many prompts to expect
         # without re-implementing the OrthoLang parser in Python!
 
-        LOGGER.debug("OrthoLangKernel.do_execute: '%s'" % code)
+        self.logger.debug("OrthoLangKernel.do_execute: '%s'" % code)
 
         # Break into statements based on blank lines
         # from https://stackoverflow.com/a/27003351/429898
@@ -154,7 +153,7 @@ showhidden  = false
                     statements.append([])
             else:
                 statements[-1].append(line)
-        LOGGER.debug("statements: '%s'" % statements)
+        self.logger.debug("statements: '%s'" % statements)
 
         # Run them individually
         statements = ['\n'.join(s) for s in statements]
@@ -163,7 +162,7 @@ showhidden  = false
         for s in statements:
             outputs.append(self.do_execute_statement(s))
         output = ''.join(outputs).strip()
-        LOGGER.debug("output: '%s'" % output)
+        self.logger.debug("output: '%s'" % output)
 
         if not silent:
             if contains_plot(output):
@@ -175,10 +174,10 @@ showhidden  = false
                             'image/png' : {'width': 600,'height': 400} # TODO set intelligently?
                         }
                     }
-                    LOGGER.debug('content: %s' % content)
-                    LOGGER.debug('sending content...')
+                    self.logger.debug('content: %s' % content)
+                    self.logger.debug('sending content...')
                     self.send_response(self.iopub_socket, 'display_data', content)
-                    LOGGER.debug('ok')
+                    self.logger.debug('ok')
             else:
                 # note: 'data' key renamed to 'text' in messaging protocol 5.0
                 # TODO which jupyter version is that?
@@ -194,36 +193,33 @@ showhidden  = false
 
     def do_execute_statement(self, code):
         code = code.strip()
-        LOGGER.debug("do_execute_statement '%s'" % code)
+        self.logger.debug("do_execute_statement '%s'" % code)
         self.ol_process.sendline(code)
         # TODO yeah, make that equivalent to restarting
         options = [OL_ARROW, OL_BYENOW] # TODO what do we do if the user :quits? restart?
         self.ol_process.expect_exact(options)
         output = clean_lines(self.ol_process.before + self.ol_process.after)
-        LOGGER.debug("statement output: '%s'" % output)
+        self.logger.debug("statement output: '%s'" % output)
         return output
 
     def quit_repl(self):
         try:
-            LOGGER.info('quitting repl...')
+            self.logger.info('quitting repl...')
             self.ol_process.sendline(':quit\n')
             self.ol_process.expect_exact(OL_BYENOW, timeout=5)
-            LOGGER.debug('final output: "%s"' % (self.ol_process.before + self.ol_process.after))
+            self.logger.debug('final output: "%s"' % (self.ol_process.before + self.ol_process.after))
             self.ol_process.kill(0)
             self.ol_process.close(force=True)
-            LOGGER.debug('quit successfully')
+            self.logger.debug('quit successfully')
         except:
-            LOGGER.error('failed to kill REPL')
+            self.logger.error('failed to kill REPL')
 
     def do_shutdown(self, restart):
         self.quit_repl()
         if restart:
-            LOGGER.info('restarting...')
-            self.spawn_repl()
+            self.logger.info('restarting...')
+            self.init_repl()
 
 if __name__ == '__main__':
-    LOGGER.debug('__main__')
     from ipykernel.kernelapp import IPKernelApp
     IPKernelApp.launch_instance(kernel_class=OrthoLangKernel)
-
-LOGGER.debug('finished without syntax errors')
