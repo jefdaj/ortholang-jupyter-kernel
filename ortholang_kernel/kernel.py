@@ -1,18 +1,13 @@
-from ipykernel.kernelbase import Kernel
-from pexpect import spawn, EOF
-
 import logging
-
-from os import getcwd, makedirs
-from os.path import join, realpath, basename
 import re
 
-import base64
-import urllib
-
-from IPython.display import display, Image
-
-from IPython import kernel
+from IPython              import kernel
+from IPython.display      import display, Image
+from base64               import b64encode
+from ipykernel.kernelbase import Kernel
+from os                   import getcwd, makedirs
+from os.path              import join, realpath, basename
+from pexpect              import spawn, EOF
 
 OL_ENCODING = 'utf-8'
 OL_ARROW    = u' —▶ '
@@ -26,14 +21,6 @@ def get_kernel_id():
     connection_file = basename(connection_file_path)
     kernel_id = connection_file.split('-', 1)[1].split('.')[0]
     return kernel_id
-
-# def count_statements(txt):
-#     # an attempt to guess how many statements are contained in a cell,
-#     # so we know how many prompts to expect
-#     # TODO also have to handle naked expressions or it won't work
-#     nassigns  = len(re.findall('(^|\n)[a-zA-Z0-9]{1,}\s*=', txt, flags=re.DOTALL))
-#     ncommands = len(re.findall('(^|\n)[a-z]{1,}:'         , txt, flags=re.DOTALL))
-#     return max(1, nassigns + ncommands)
 
 # from https://www.tutorialspoint.com/How-can-I-remove-the-ANSI-escape-sequences-from-a-string-in-python
 def remove_ansi_escapes(txt):
@@ -121,14 +108,13 @@ showhidden  = false
         for path in paths:
             path = realpath(path)
             self.logger.debug('loading image from "%s"' % path)
-            utf8_b64 = base64.b64encode(open(path, "rb").read()).decode(OL_ENCODING)
+            utf8_b64 = b64encode(open(path, "rb").read()).decode(OL_ENCODING)
             plots.append(utf8_b64)
         return plots
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
         self.logger.debug("OrthoLangKernel.do_execute: '%s'" % code)
-        # self.logger.debug('count_statements: %d' % count_statements(code))
 
         # Break into statements based on blank lines
         # from https://stackoverflow.com/a/27003351/429898
