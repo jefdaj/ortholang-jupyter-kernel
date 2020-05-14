@@ -1,4 +1,5 @@
 import logging
+import pexpect
 import re
 
 from IPython              import kernel
@@ -7,7 +8,6 @@ from base64               import b64encode
 from ipykernel.kernelbase import Kernel
 from os                   import getcwd, makedirs
 from os.path              import join, realpath, basename
-from pexpect              import spawn, EOF
 
 OL_ENCODING = 'utf-8'
 OL_ARROW    = u' —▶ '
@@ -82,7 +82,7 @@ showhidden  = false
         self.logger.debug('OrthoLangKernel.init_repl')
         args = ['--config', self.cfgfile, '--interactive']
         self.logger.info('spawning ortholang %s' % args)
-        self.ol_process = spawn('ortholang', args, encoding=OL_ENCODING, echo=False, timeout=10)
+        self.ol_process = pexpect.spawn('ortholang', args, encoding=OL_ENCODING, echo=False, timeout=10)
         self.ol_process.expect_exact(OL_ARROW)
         self.logger.debug("before: '%s'" % self.ol_process.before)
         self.logger.debug("after: '%s'" % self.ol_process.after)
@@ -133,7 +133,13 @@ showhidden  = false
 
         outputs = []
         for s in statements:
-            outputs.append(self.do_execute_statement(s))
+
+            try:
+                outputs.append(self.do_execute_statement(s))
+            except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT)as e:
+                self.logger.error("do_execute_statement failed: %s" % e)
+                self.restart()
+
         output = ''.join(outputs).strip()
         self.logger.debug("output: '%s'" % output)
 
@@ -168,11 +174,14 @@ showhidden  = false
         code = code.strip()
         self.logger.debug("do_execute_statement '%s'" % code)
         self.ol_process.sendline(code)
-        # TODO yeah, make that equivalent to restarting
-        options = [OL_ARROW, OL_BYENOW] # TODO what do we do if the user :quits? restart?
-        self.ol_process.expect_exact(options)
+        options = [OL_ARROW, OL_BYENOW]
+        # see https://stackoverflow.com/a/35134678/429898
+        i = self.ol_process.expect_exact(options)
+        self.logger.debug("expect index: %d" % i)
         output = clean_lines(self.ol_process.before + self.ol_process.after)
         self.logger.debug("statement output: '%s'" % output)
+        if i == 1:
+            self.restart()
         return output
 
     def quit_repl(self):
@@ -187,11 +196,14 @@ showhidden  = false
         except:
             self.logger.error('failed to kill REPL')
 
+    def restart(self):
+        self.logger.info('restarting...')
+        self.init_repl()
+
     def do_shutdown(self, restart):
         self.quit_repl()
         if restart:
-            self.logger.info('restarting...')
-            self.init_repl()
+            self.restart()
 
 if __name__ == '__main__':
     from ipykernel.kernelapp import IPKernelApp
