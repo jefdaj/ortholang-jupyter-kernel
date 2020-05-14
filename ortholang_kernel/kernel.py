@@ -30,6 +30,7 @@ def get_kernel_id():
 # def count_statements(txt):
 #     # an attempt to guess how many statements are contained in a cell,
 #     # so we know how many prompts to expect
+#     # TODO also have to handle naked expressions or it won't work
 #     nassigns  = len(re.findall('(^|\n)[a-zA-Z0-9]{1,}\s*=', txt, flags=re.DOTALL))
 #     ncommands = len(re.findall('(^|\n)[a-z]{1,}:'         , txt, flags=re.DOTALL))
 #     return max(1, nassigns + ncommands)
@@ -142,6 +143,7 @@ showhidden  = false
         # without re-implementing the OrthoLang parser in Python!
 
         self.logger.debug("OrthoLangKernel.do_execute: '%s'" % code)
+        # self.logger.debug('count_statements: %d' % count_statements(code))
 
         # Break into statements based on blank lines
         # from https://stackoverflow.com/a/27003351/429898
