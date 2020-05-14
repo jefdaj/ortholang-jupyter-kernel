@@ -121,6 +121,8 @@ test2 = ["two", "three"]
 Otherwise we have no obvious way to know how many prompts to expect
 without re-implementing the OrthoLang parser in Python!
 
+TODO the "can't return both text and data" gotcha
+
 
 [nixos]: https://nixos.org
 [nix]: https://nixos.org/nix
