@@ -3,7 +3,8 @@ from pexpect import spawn, EOF
 
 import logging as LOGGING
 
-from os.path import realpath
+from os import getcwd, makedirs
+from os.path import join, realpath, basename
 import re
 
 import base64
@@ -11,20 +12,29 @@ import urllib
 
 from IPython.display import display, Image
 
+from IPython import kernel
+
 OL_ENCODING = 'utf-8'
 OL_ARROW    = u' —▶ '
 OL_BYENOW   = u'Bye for now!'
-OL_CFGFILE  = '/home/jefdaj/ortholang_kernel/test1.cfg'
-OL_LOGFILE  = '/tmp/ortholang_kernel.log'
 
+# TODO add this to the main syslog instead
+OL_LOGFILE = '/tmp/ortholang_kernel.log'
 HANDLER = LOGGING.FileHandler(OL_LOGFILE)
 HANDLER.setFormatter(LOGGING.Formatter('%(asctime)s %(name)s %(levelname)s %(message)s'))
-
 LOGGER = LOGGING.getLogger('ortholang_kernel')
 LOGGER.setLevel(LOGGING.DEBUG)
 LOGGER.addHandler(HANDLER)
 
 LOGGER.debug('reading ortholang_kernel.py...')
+
+def get_kernel_id():
+    # This must be run from inside a kernel.
+    # Based on: https://stackoverflow.com/a/13055551/429898
+    connection_file_path = kernel.get_connection_file()
+    connection_file = basename(connection_file_path)
+    kernel_id = connection_file.split('-', 1)[1].split('.')[0]
+    return kernel_id
 
 # def count_statements(txt):
 #     # an attempt to guess how many statements are contained in a cell,
@@ -68,9 +78,24 @@ class OrthoLangKernel(Kernel):
     }
     banner = "OrthoLang 0.9.5"
 
+    def write_config(self):
+        cfgtext = '''workdir = "{workdir}"
+tmpdir  = "{tmpdir}"
+report  = "$(tmpdir)/report.html"
+logfile = "$(tmpdir)/log.txt"
+history = "$(tmpdir)/history.txt"
+shellaccess = false
+progressbar = false
+showtypes   = false
+autosave    = false
+showhidden  = false
+'''.format(**self.__dict__)
+        with open(self.cfgpath, 'w') as f:
+            f.write(cfgtext)
+
     def spawn_repl(self):
         LOGGER.debug('OrthoLangKernel.spawn_repl')
-        args = ['--config', OL_CFGFILE, '--interactive']
+        args = ['--config', self.cfgpath, '--interactive']
         LOGGER.info('spawning ortholang %s' % args)
         self.ol_process = spawn('ortholang', args, encoding=OL_ENCODING, echo=False, timeout=10)
         self.ol_process.expect_exact(OL_ARROW)
@@ -80,6 +105,11 @@ class OrthoLangKernel(Kernel):
 
     def __init__(self, *args, **kwargs):
         LOGGER.debug('OrthoLangKernel.__init__')
+        self.workdir = getcwd()
+        self.tmpdir = join(self.workdir, '.ortholang-kernels', str(get_kernel_id()))
+        self.cfgpath = join(self.tmpdir, 'ortholang.cfg')
+        makedirs(self.tmpdir, exist_ok=True)
+        self.write_config()
         self.spawn_repl()
         super(OrthoLangKernel, self).__init__(*args, **kwargs)
 
