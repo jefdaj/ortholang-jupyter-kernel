@@ -9,7 +9,6 @@ Initial setup
 -------------
 
 It could be installed using the regular Jupyter kernel method:
-
 ```
 python -m ortholang_kernel.install
 ```
@@ -102,6 +101,25 @@ security.acme = {
 
 The `virtualHosts` section is useful if you want to tack this server on to an existing site.
 In that case you might also want `useACMEHost` to re-use an existing SSL certificate instead.
+
+Usage
+-----
+
+There's one extra rule for parsing in the notebook interface: when a cell
+contains multiple statements, they must be separated by blank lines. For
+example the blank lines here are important:
+
+```
+test1 = ["one",
+         "two"]
+
+test2 = ["two", "three"]
+
+:show
+```
+
+Otherwise we have no obvious way to know how many prompts to expect
+without re-implementing the OrthoLang parser in Python!
 
 
 [nixos]: https://nixos.org

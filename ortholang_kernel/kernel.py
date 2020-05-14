@@ -127,21 +127,6 @@ showhidden  = false
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
 
-        # There's one extra rule for parsing in the
-        # notebook interface: when a cell contains multiple statements, they
-        # must be separated by blank lines.  For example the blank lines here
-        # are important:
-        #
-        # > test1 = ["one",
-        # >          "two"]
-        # >
-        # > test2 = ["two", "three"]
-        # >
-        # > :show
-        #
-        # Otherwise we have no obvious way to know how many prompts to expect
-        # without re-implementing the OrthoLang parser in Python!
-
         self.logger.debug("OrthoLangKernel.do_execute: '%s'" % code)
         # self.logger.debug('count_statements: %d' % count_statements(code))
 
