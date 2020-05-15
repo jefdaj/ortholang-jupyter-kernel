@@ -29,7 +29,9 @@ services.jupyter = {
   port = 8888;
   ip = "127.0.0.1";
 
-  # generated with `jupyter notebook password` (or `sha1sum` would probably work?)
+  # generated with `jupyter notebook password`
+  # see the password entry here for details:
+  # https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/services/development/jupyter/default.nix#L77
   password = "'sha1:YOURSHA1PASSWORDHASHHERE'";
 
   notebookConfig = '' 
