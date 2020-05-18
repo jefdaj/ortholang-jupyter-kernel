@@ -150,7 +150,8 @@ showhidden  = false
                     content = {
                         'data': {'image/png': plot},
                         'metadata' : {
-                            'image/png' : {'width': 600,'height': 400} # TODO set intelligently?
+                            # TODO does this actually affect anything?
+                            'image/png' : {'width': '400px','height': '800px'}
                         }
                     }
                     self.logger.debug('content: %s' % content)
