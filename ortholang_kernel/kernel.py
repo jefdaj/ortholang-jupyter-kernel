@@ -150,7 +150,6 @@ showhidden  = false
                     content = {
                         'data': {'image/png': plot},
                         'metadata' : {
-                            # TODO does this actually affect anything?
                             'image/png' : {'width': '400px','height': '800px'}
                         }
                     }
