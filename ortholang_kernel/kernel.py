@@ -186,16 +186,7 @@ showhidden  = false
                 for (plot, width, height) in plots:
 
                     # Jupyter lab seems to respect width, but not max-width or height.
-                    # So we manipulate those by setting width.
-                    if width >= height:
-                        display_width = min(width, 400)
-                    elif height <= 800:
-                        # dimensions are good as-is
-                        display_width = width
-                    else:
-                        # image too tall, so scale by reducing width
-                        display_height = min(height, 800)
-                        display_width = 800 / (height / width)
+                    display_width = width / 3.0
 
                     content = {
                         'data': {'image/png': plot},
