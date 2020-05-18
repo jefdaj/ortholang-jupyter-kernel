@@ -24,8 +24,8 @@ pythonPackages.buildPythonApplication rec {
     ipykernel
     pexpect
     matplotlib
-    pillow
-    imageio
+    # pillow
+    # imageio
     numpy
   ];
 

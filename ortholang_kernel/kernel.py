@@ -1,6 +1,8 @@
 import logging
 import pexpect
 import re
+import struct
+import imghdr
 
 from IPython              import kernel
 from IPython.display      import display, Image
@@ -41,6 +43,40 @@ def clean_lines(txt):
 
 def contains_plot(txt):
     return 'plot image "' in txt
+
+def get_image_size(fname):
+    # from https://stackoverflow.com/a/20380514/429898
+    with open(fname, 'rb') as fhandle:
+        head = fhandle.read(24)
+        if len(head) != 24:
+            return
+        if imghdr.what(fname) == 'png':
+            check = struct.unpack('>i', head[4:8])[0]
+            if check != 0x0d0a1a0a:
+                return
+            width, height = struct.unpack('>ii', head[16:24])
+        elif imghdr.what(fname) == 'gif':
+            width, height = struct.unpack('<HH', head[6:10])
+        elif imghdr.what(fname) == 'jpeg':
+            try:
+               fhandle.seek(0) # Read 0xff next
+               size = 2
+               ftype = 0
+               while not 0xc0 <= ftype <= 0xcf:
+                   fhandle.seek(size, 1)
+                   byte = fhandle.read(1)
+                   while ord(byte) == 0xff:
+                       byte = fhandle.read(1)
+                   ftype = ord(byte)
+                   size = struct.unpack('>H', fhandle.read(2))[0] - 2
+               # We are at a SOFn block
+               fhandle.seek(1, 1)  # Skip `precision' byte.
+               height, width = struct.unpack('>HH', fhandle.read(4))
+            except Exception: #IGNORE:W0703
+                return
+        else:
+            return
+        return width, height
 
 class OrthoLangKernel(Kernel):
     implementation = 'OrthoLang'
@@ -109,7 +145,8 @@ showhidden  = false
             path = realpath(path)
             self.logger.debug('loading image from "%s"' % path)
             utf8_b64 = b64encode(open(path, "rb").read()).decode(OL_ENCODING)
-            plots.append(utf8_b64)
+            width, height = get_image_size(path)
+            plots.append((utf8_b64, width, height))
         return plots
 
     def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
@@ -146,11 +183,24 @@ showhidden  = false
         if not silent:
             if contains_plot(output):
                 plots = self.load_plots(output)
-                for plot in plots:
+                for (plot, width, height) in plots:
+
+                    # Jupyter lab seems to respect width, but not max-width or height.
+                    # So we manipulate those by setting width.
+                    if width >= height:
+                        display_width = min(width, 400)
+                    elif height <= 800:
+                        # dimensions are good as-is
+                        display_width = width
+                    else:
+                        # image too tall, so scale by reducing width
+                        display_height = min(height, 800)
+                        display_width = 800 / (height / width)
+
                     content = {
                         'data': {'image/png': plot},
                         'metadata' : {
-                            'image/png' : {'width': '400px','height': '800px'}
+                            'image/png' : {'width': str(display_width) + 'px'}
                         }
                     }
                     self.logger.debug('content: %s' % content)
