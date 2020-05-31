@@ -158,10 +158,10 @@ showhidden  = false
         # TODO possible replacement: expect one prompt per = sign or : in the input
         statements = [[]]
         for line in code.splitlines():
-            if len(line) == 0:
+            if len(line) == 0 or '=' in line or line.strip().startswith(':'):
                 if len(statements[-1]) > 0:
                     statements.append([])
-            else:
+            if len(line) > 0:
                 statements[-1].append(line)
         self.logger.debug("statements: '%s'" % statements)
 
