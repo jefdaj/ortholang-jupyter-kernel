@@ -186,6 +186,7 @@ showhidden  = false
                 for (plot, width, height) in plots:
 
                     # Jupyter lab seems to respect width, but not max-width or height.
+                    # TODO this works with flowcharts, but adjust to work with other plots too
                     display_width = width / 3.0
 
                     content = {
