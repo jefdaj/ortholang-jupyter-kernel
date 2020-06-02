@@ -126,8 +126,11 @@ showhidden  = false
 
     def __init__(self, *args, **kwargs):
         self.kernel_id = get_kernel_id()
-        self.workdir = getcwd() # TODO no, always use the top-level jupyter-lab dir!
-        self.tmpdir  = join(self.workdir, '.ortholang-kernels', self.kernel_id)
+        self.workdir = getcwd()
+
+        # TODO get the top-level jupyter-lab dir from nixos config
+        self.tmpdir  = join('/mnt/data/jupyter-lab', '.ortholang-kernels', self.kernel_id)
+
         self.cfgfile = join(self.tmpdir, 'ortholang.cfg')
         self.logfile = join(self.tmpdir, 'kernel.log')
         makedirs(self.tmpdir, exist_ok=True)
