@@ -126,7 +126,7 @@ showhidden  = false
 
     def __init__(self, *args, **kwargs):
         self.kernel_id = get_kernel_id()
-        self.workdir = getcwd()
+        self.workdir = getcwd() # TODO no, always use the top-level jupyter-lab dir!
         self.tmpdir  = join(self.workdir, '.ortholang-kernels', self.kernel_id)
         self.cfgfile = join(self.tmpdir, 'ortholang.cfg')
         self.logfile = join(self.tmpdir, 'kernel.log')
@@ -149,32 +149,38 @@ showhidden  = false
             plots.append((utf8_b64, width, height))
         return plots
 
-    def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
-
-        self.logger.debug("OrthoLangKernel.do_execute: '%s'" % code)
-
+    def split_statements(self, code):
         # Break into statements based on blank lines
         # from https://stackoverflow.com/a/27003351/429898
-        # TODO possible replacement: expect one prompt per = sign or : in the input
         statements = [[]]
         for line in code.splitlines():
-            if len(line) == 0 or '=' in line or line.strip().startswith(':'):
+            if len(line) == 0 \
+                    or '=' in line \
+                    or line.strip().startswith(':') \
+                    or line.strip().startswith('#'):
                 if len(statements[-1]) > 0:
                     statements.append([])
             if len(line) > 0:
                 statements[-1].append(line)
-        self.logger.debug("statements: '%s'" % statements)
-
-        # Run them individually
         statements = ['\n'.join(s) for s in statements]
+        self.logger.debug("statements: '%s'" % statements)
+        return statements
 
+    def do_execute(self, code, silent, store_history=True, user_expressions=None, allow_stdin=False):
+        self.logger.debug("OrthoLangKernel.do_execute: '%s'" % code)
+        statements = self.split_statements(code)
         outputs = []
         for s in statements:
 
             try:
                 outputs.append(self.do_execute_statement(s))
-            except (pexpect.exceptions.EOF, pexpect.exceptions.TIMEOUT)as e:
-                self.logger.error("do_execute_statement failed: %s" % e)
+            except pexpect.exceptions.TIMEOUT as e:
+                self.logger.error("do_execute_statement timeout: %s" % e)
+                outputs.append(str(e))
+                self.restart()
+            except pexpect.exceptions.EOF as e:
+                self.logger.error("do_execute_statement OEF: %s" % e)
+                outputs.append(str(e))
                 self.restart()
 
         output = ''.join(outputs).strip()
