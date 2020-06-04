@@ -157,15 +157,13 @@ showhidden  = false
         # from https://stackoverflow.com/a/27003351/429898
         statements = [[]]
         for line in code.splitlines():
-            if len(line) == 0 \
-                    or '=' in line \
-                    or line.strip().startswith(':') \
-                    or line.strip().startswith('#'):
+            line = line.split('#', 1)[0]
+            if len(line) == 0 or '=' in line or line.strip().startswith(':'):
                 if len(statements[-1]) > 0:
                     statements.append([])
             if len(line) > 0:
                 statements[-1].append(line)
-        statements = ['\n'.join(s) for s in statements]
+        statements = [' '.join(s) for s in statements]
         self.logger.debug("statements: '%s'" % statements)
         return statements
 
@@ -186,7 +184,7 @@ showhidden  = false
                 outputs.append(str(e))
                 self.restart()
 
-        output = ''.join(outputs).strip()
+        output = '\n'.join(outputs).strip()
         self.logger.debug("output: '%s'" % output)
 
         if not silent:
@@ -230,7 +228,7 @@ showhidden  = false
         self.ol_process.sendline(code)
         options = [OL_ARROW, OL_BYENOW]
         # see https://stackoverflow.com/a/35134678/429898
-        i = self.ol_process.expect_exact(options)
+        i = self.ol_process.expect_exact(options, timeout=None)
         self.logger.debug("expect index: %d" % i)
         output = clean_lines(self.ol_process.before + self.ol_process.after)
         self.logger.debug("statement output: '%s'" % output)
