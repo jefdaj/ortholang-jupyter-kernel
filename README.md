@@ -1,4 +1,4 @@
-ortholang_kernel
+ortholang_jupyter_kernel
 ================
 
 A [Jupyter Lab][jupyterlab] kernel for [OrthoLang][ortholang].
@@ -10,7 +10,7 @@ Initial setup
 
 It could be installed using the regular Jupyter kernel method:
 ```
-python -m ortholang_kernel.install
+python -m ortholang_jupyter_kernel.install
 ```
 
 ... But since OrthoLang already requires [Nix][nix], we might as well do it the
@@ -49,7 +49,7 @@ services.jupyter = {
       };
       in {
         displayName = "OrthoLang 0.9.5";
-        argv = [ "${kernel}/bin/ortholang_kernel" "-f" "{connection_file}" ];
+        argv = [ "${kernel}/bin/ortholang_jupyter_kernel" "-f" "{connection_file}" ];
         language = "ortholang";
       };
 

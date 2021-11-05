@@ -5,14 +5,14 @@ from distutils.core import setup
 readme = "README HERE"
 
 setup(
-    name='ortholang_kernel',
+    name='ortholang_jupyter_kernel',
     version='0.1',
-    packages=['ortholang_kernel'],
+    packages=['ortholang_jupyter_kernel'],
     description='OrthoLang kernel for Jupyter',
     long_description=readme,
     author='Jeffrey David Johnson',
     author_email='jefdaj@berkeley.edu',
-    url='https://github.com/jefdaj/ortholang_kernel',
+    url='https://github.com/jefdaj/ortholang-jupyter-kernel',
     install_requires=[
         'jupyter_client', 'ipython', 'ipykernel'
     ],
@@ -22,6 +22,6 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     entry_points = {
-        'console_scripts': ['ortholang_kernel = ortholang_kernel.__main__:main']
+        'console_scripts': ['ortholang_jupyter_kernel = ortholang_jupyter_kernel.__main__:main']
     }
 )

@@ -12,7 +12,7 @@
 }:
 
 pythonPackages.buildPythonApplication rec {
-  name = "ortholang_kernel";
+  name = "ortholang_jupyter_kernel";
   version = "0.1";
 
   # prevents copying the src dir into the nix store on every shell invocation
