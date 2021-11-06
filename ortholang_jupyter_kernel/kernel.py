@@ -91,6 +91,7 @@ class OrthoLangKernel(Kernel):
     }
     banner = "OrthoLang 0.9.5"
 
+    # TODO make this configurable from nix
     def write_config(self):
         cfgtext = '''workdir = "{workdir}"
 tmpdir  = "{tmpdir}"
@@ -128,8 +129,8 @@ showhidden  = false
         self.kernel_id = get_kernel_id()
         self.workdir = getcwd()
 
-        # TODO get the top-level jupyter-lab dir from nixos config
-        self.tmpdir  = join('/mnt/data/jupyter-lab', '.ortholang-kernels', self.kernel_id)
+        # TODO get the top-level jupyter-lab dir from nixos config? relative seems to work
+        self.tmpdir  = join('.ortholang-kernels', self.kernel_id)
 
         self.cfgfile = join(self.tmpdir, 'ortholang.cfg')
         self.logfile = join(self.tmpdir, 'kernel.log')
