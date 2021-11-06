@@ -1,13 +1,12 @@
-# This looks a little weird because OrthoLang includes its own pinned nixpkgs
-# for reproduciblity, and there's no obvious reason we would want that one to
-# be out of sync with the one used to build the Jupyter kernel. So we reach
-# into the ortholang submodule and use its nixpkgs settings. That behavior can
-# be overridden by passing a different pkgs argument from your system config.
-
 # TODO doCheck needs $HOME set to run correctly?
 
-{ ortholang      ? import ./ortholang
-, pkgs           ? import ./ortholang/nixpkgs
+let
+  sources = import ./nix/sources.nix {};
+  nixpkgs = import sources.nixpkgs {};
+in
+
+{ pkgs           ? nixpkgs
+, ortholang      ? pkgs.callPackage sources.ortholang {}
 , pythonPackages ? pkgs.python37Packages
 }:
 
