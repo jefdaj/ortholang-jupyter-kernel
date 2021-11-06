@@ -12,27 +12,29 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
-        "branch": "release-21.05",
+        "branch": "master",
         "description": "Nix Packages collection",
-        "homepage": "",
-        "owner": "NixOS",
+        "homepage": null,
+        "owner": "jefdaj",
         "repo": "nixpkgs",
-        "rev": "5c02380de3951d0237807c16eb19873cb3c5f75d",
-        "sha256": "021ymgnxf84phgi0j1ryi4nxq3qivbrhf374sqv35xq12z03k50m",
+        "rev": "e1785c466e8aeb0a5806d27e43ffe6203bb719f7",
+        "sha256": "11j86m97qv4gc4chm6fklkacfimkn7sxc5c3k3vwy3j6bp83bhsy",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/5c02380de3951d0237807c16eb19873cb3c5f75d.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+        "url": "https://github.com/jefdaj/nixpkgs/archive/e1785c466e8aeb0a5806d27e43ffe6203bb719f7.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
+        "version": "2020-02-01_ortholang"
     },
     "ortholang": {
         "branch": "master",
         "description": "Short, reproducible phylogenomic cuts",
-        "homepage": "https://ortholang.pmb.berkeley.edu",
+        "homepage": null,
         "owner": "jefdaj",
         "repo": "ortholang",
         "rev": "d62155658fb52b9cba2f9cc3b77eb66c88e1c009",
         "sha256": "01mb8yasj6zqfck9pl0x0dxbwqan1p5sf7wrcsc8a2bapnslwpm8",
         "type": "tarball",
         "url": "https://github.com/jefdaj/ortholang/archive/d62155658fb52b9cba2f9cc3b77eb66c88e1c009.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz",
+        "version": "v0.9.4"
     }
 }
