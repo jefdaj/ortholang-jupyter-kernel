@@ -3,10 +3,7 @@
 let
 
   # from https://github.com/tweag/jupyterWith shell.nix example
-  jupyter = import (builtins.fetchGit {
-    url = https://github.com/tweag/jupyterWith;
-    rev = "";
-  }) {};
+  jupyter = import ../ortholang-jupyterwith {};
   iPython = jupyter.kernels.iPythonWith {
     name = "python";
     packages = p: with p; [ numpy ];
