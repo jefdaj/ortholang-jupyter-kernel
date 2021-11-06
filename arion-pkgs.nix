@@ -1,1 +1,1 @@
-(import ./ortholang/nixpkgs) { system = "x86_64-linux"; }
+(import ./ortholang/nixpkgs) # { system = "x86_64-linux"; }
