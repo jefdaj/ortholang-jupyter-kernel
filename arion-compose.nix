@@ -2,15 +2,29 @@
 
 let
 
+  # this would give you the official version
+  # jupyter = import (builtins.fetchGit {
+  #   url = https://github.com/tweag/jupyterWith;
+  #   rev = "";
+  # }) {};
+
+  # but we want my fork with ortholang support instead for now
+  jupyter = import (builtins.fetchGit {
+    url = https://github.com/jefdaj/jupyterwith-ortholang;
+    rev = "";
+  }) {};
+
   # from https://github.com/tweag/jupyterWith shell.nix example
-  jupyter = import ../ortholang-jupyterwith {};
   iPython = jupyter.kernels.iPythonWith {
     name = "python";
     packages = p: with p; [ numpy ];
   };
+  ortholang = jupyter.kernels.ortholangKernel {
+    name = "test1";
+  };
   jupyterEnvironment =
     jupyter.jupyterlabWith {
-      kernels = [ iPython ];
+      kernels = [ iPython ortholang ];
   };
 
   # pinned ortholang kernel v0.9.5
@@ -20,8 +34,8 @@ let
   pinnedNixpkgs   = import ./ortholang/nixpkgs;
   kernel = pinnedNixpkgs.callPackage ./default.nix rec {
     ortholang      = pinnedOrtholang;
-    pkgs           = pinnedNixpkgs;
-    pythonPackages = pinnedNixpkgs.python37Packages;
+    inherit pkgs;
+    pythonPackages = pkgs.python37Packages;
   };
  
 in {
