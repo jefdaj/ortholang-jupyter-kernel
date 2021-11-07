@@ -57,7 +57,7 @@ in {
 
         # 8888 is the default jupyter lab port
         # but here we change the host side to avoid messing with the system version
-        "9999:8888" # host:container
+        "8888:8888" # host:container
 
       ];
       # TODO where would this be ideally?
