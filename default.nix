@@ -8,7 +8,7 @@
 
 { ortholang      ? import ./ortholang
 , pkgs           ? import ./ortholang/nixpkgs
-, pythonPackages ? pkgs.python37Packages
+, pythonPackages ? pkgs.python37Packages # TODO update this?
 }:
 
 pythonPackages.buildPythonApplication rec {
@@ -16,7 +16,9 @@ pythonPackages.buildPythonApplication rec {
   version = "0.1";
 
   # prevents copying the src dir into the nix store on every shell invocation
-  src = if pkgs.lib.inNixShell then null else ./.;
+  # ... but breaks jupyterWith which uses src inside a nix-shell by default
+  # src = if pkgs.lib.inNixShell then null else ./.;
+  src = ./.;
 
   propagatedBuildInputs = with pythonPackages; [
     jupyter_client
@@ -24,9 +26,9 @@ pythonPackages.buildPythonApplication rec {
     ipykernel
     pexpect
     matplotlib
+    numpy
     # pillow
     # imageio
-    numpy
   ];
 
   # adds ortholang to PATH in the wrapper script
