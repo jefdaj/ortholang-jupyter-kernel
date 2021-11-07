@@ -6,8 +6,14 @@
 
 # TODO doCheck needs $HOME set to run correctly?
 
-{ ortholang      ? import ./ortholang
-, pkgs           ? import ./ortholang/nixpkgs
+let
+  sources         = import ./nix/sources.nix {};
+  pinnedPkgs      = import sources.nixpkgs {};
+  pinnedOrtholang = import sources.ortholang;
+in
+
+{ ortholang      ? pinnedOrtholang
+, pkgs           ? pinnedPkgs
 , pythonPackages ? pkgs.python37Packages # TODO update this?
 }:
 
